@@ -1,151 +1,192 @@
 import streamlit as st
+import tensorflow as tf
 import torch
-import pickle
 import gdown
+import os
+import zipfile
 from pathlib import Path
-import numpy as np
-import tensorflow as tfa
-import gdown, zipfile, os
 from transformers import BertTokenizer, BertForSequenceClassification
+from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
+# -----------------------------
+# CONFIGURATION
+# -----------------------------
 
-# --------------------------------------------------
-# GOOGLE DRIVE FILE IDS
-# --------------------------------------------------
-FILE_IDS = {
-    "lstm": "1PLBJYlIshDk1Br9vNptfXHJFPRNHDO8i",
-    "gru": "1SndjABYlVadUQ7-9XKm4HR1Mf7Mbxir8",
-    "bert": "1P5cm9nfEfoYD6dnb9V48dobtaQCORnq0",
-}
+BASE_DIR = Path(__file__).resolve().parent
+
+print("Base DIR", BASE_DIR)
+
+LSTM_MODEL_ID = "1PLBJYlIshDk1Br9vNptfXHJFPRNHDO8i"
+GRU_MODEL_ID = "1SndjABYlVadUQ7-9XKm4HR1Mf7Mbxir8"
+BERT_MODEL_ID = "1P5cm9nfEfoYD6dnb9V48dobtaQCORnq0"
+TOKENIZER_ID = "1SVVnDOA1ABGVFURVDR3RXq3GQQD4LJQ5"
+
+MAX_LEN = 100
 
 # Where to store downloaded files locally
-MODEL_DIR = Path("models")
+MODEL_DIR = Path(BASE_DIR / "models")
 MODEL_DIR.mkdir(exist_ok=True)
 
-# --------------------------------------------------
-# HELPER: Download file from Drive if not exists
-# --------------------------------------------------
-def download_from_drive(file_id, output_path):
-    if not output_path.exists():
+# -----------------------------
+# DOWNLOAD FUNCTION
+# -----------------------------
+
+def download_file(file_id, output):
+
+    if not os.path.exists(output):
+
         url = f"https://drive.google.com/uc?id={file_id}"
-        gdown.download(url, str(output_path), quiet=False)
-    return output_path
+
+        gdown.download(url, output, quiet=False)
 
 
-# --------------------------------------------------
-# LOAD MODELS & DATA
-# --------------------------------------------------
+# -----------------------------
+# LOAD LSTM MODEL
+# -----------------------------
+
 @st.cache_resource
-def load_models():
-    lstm_path = download_from_drive(FILE_IDS["kmeans"], MODEL_DIR / "lstm_csat_model.keras")
-    gru_path = download_from_drive(FILE_IDS["scaler"], MODEL_DIR / "gru_csat_model.keras")
-    bert_path = download_from_drive(FILE_IDS["similarity"], MODEL_DIR / "distilbert_csat_model.pth")
-    # products_path = download_from_drive(FILE_IDS["products"], MODEL_DIR / "product_names.pkl")
+def load_lstm():
 
-    # Load with joblib
-    lstm_model = tf.keras.models.load_model(lstm_path)
-    gru_model = tf.keras.models.load_model(gru_path)
-    bert_model = torch.load(bert_path, map_location=torch.device("cpu"))
-    # products = joblib.load(products_path)
+    download_file(LSTM_MODEL_ID, MODEL_DIR / "lstm_model.keras")
 
-    return lstm_model, gru_model, bert_model
+    model = tf.keras.models.load_model(MODEL_DIR / "lstm_model.keras")
+
+    return model
+
+
+# -----------------------------
+# LOAD GRU MODEL
+# -----------------------------
+
+@st.cache_resource
+def load_gru():
+
+    download_file(GRU_MODEL_ID, MODEL_DIR / "gru_model.keras")
+
+    model = tf.keras.models.load_model(MODEL_DIR / "gru_model.keras")
+
+    return model
+
+
+# -----------------------------
+# LOAD BERT MODEL
+# -----------------------------
+
+@st.cache_resource
+def load_bert():
+
+    download_file(BERT_MODEL_ID, MODEL_DIR / "distilbert_model.pth")
+
+    model = BertForSequenceClassification.from_pretrained(
+        "distilbert-base-uncased",
+        num_labels=1
+    )
+
+    model.load_state_dict(
+        torch.load(MODEL_DIR / "distilbert_model.pth", map_location=torch.device("cpu"))
+    )
+
+    model.eval()
+
+    return model
+
+
+# -----------------------------
+# LOAD TOKENIZER
+# -----------------------------
 
 @st.cache_resource
 def load_tokenizer():
 
-    TOKENIZER_ID = "15fXz4-w5ykPqe7y0GAH2W-aNSeARpGXE"
-    TOKENIZER_ZIP = MODEL_DIR / "bert_tokenizer.zip"
-    TOKENIZER_DIR = MODEL_DIR / "bert_tokenizer"
+    download_file(TOKENIZER_ID, MODEL_DIR / "bert_tokenizer.zip")
 
-    if not os.path.exists(TOKENIZER_DIR):
+    if not os.path.exists(MODEL_DIR / "bert_tokenizer"):
 
-        gdown.download(
-            f"https://drive.google.com/uc?id={TOKENIZER_ID}",
-            TOKENIZER_ZIP,
-            quiet=False
-        )
+        with zipfile.ZipFile("bert_tokenizer.zip", "r") as zip_ref:
 
-        with zipfile.ZipFile(TOKENIZER_ZIP, 'r') as zip_ref:
-            zip_ref.extractall(TOKENIZER_DIR)
+            zip_ref.extractall("bert_tokenizer")
 
-    tokenizer = BertTokenizer.from_pretrained(TOKENIZER_DIR)
+    tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")
 
     return tokenizer
 
-lstm_model, gru_model, bert_model = load_models()
 
-# Page title
+# -----------------------------
+# LOAD EVERYTHING
+# -----------------------------
+
+lstm_model = load_lstm()
+gru_model = load_gru()
+bert_model = load_bert()
+bert_tokenizer = load_tokenizer()
+
+# -----------------------------
+# STREAMLIT UI
+# -----------------------------
+
 st.title("Customer Satisfaction (CSAT) Prediction System")
 
-st.write("Predict CSAT score from customer remarks using Deep Learning models.")
-
-# ------------------------------
-# Load LSTM Model
-# ------------------------------
-
-# lstm_model = tf.keras.models.load_model("lstm_csat_model.h5")
-
-with open("tokenizer.pkl", "rb") as f:
-    lstm_tokenizer = pickle.load(f)
-
-MAX_LEN = 100
-
-# ------------------------------
-# Load BERT Model
-# ------------------------------
-
-bert_tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-
-bert_model = BertForSequenceClassification.from_pretrained(
-    "bert-base-uncased",
-    num_labels=1
-)
-
-bert_model.load_state_dict(bert_model)
-bert_model.eval()
-
-# ------------------------------
-# Model Selection
-# ------------------------------
+st.write("Predict customer satisfaction score from remarks using deep learning models.")
 
 model_choice = st.selectbox(
-    "Select Model for Prediction",
-    ["LSTM Model (TensorFlow)", "BERT Model (PyTorch)"]
+    "Select Model",
+    ["LSTM", "GRU", "BERT"]
 )
-
-# ------------------------------
-# User Input
-# ------------------------------
 
 customer_remark = st.text_area("Enter Customer Remark")
 
-# ------------------------------
-# Prediction Button
-# ------------------------------
+# -----------------------------
+# PREDICTION
+# -----------------------------
 
 if st.button("Predict CSAT Score"):
 
     if customer_remark.strip() == "":
+
         st.warning("Please enter customer remark")
 
     else:
 
-        # ------------------------------
-        # LSTM Prediction
-        # ------------------------------
-        if model_choice == "LSTM Model (TensorFlow)":
+        # -------------------------
+        # LSTM MODEL
+        # -------------------------
+        if model_choice == "LSTM":
 
-            seq = lstm_tokenizer.texts_to_sequences([customer_remark])
-            padded = pad_sequences(seq, maxlen=MAX_LEN)
+            sequences = bert_tokenizer.encode(
+                customer_remark,
+                truncation=True,
+                padding="max_length",
+                max_length=MAX_LEN
+            )
+
+            padded = [sequences]
 
             prediction = lstm_model.predict(padded)
 
             csat_score = float(prediction[0][0])
 
-        # ------------------------------
-        # BERT Prediction
-        # ------------------------------
+        # -------------------------
+        # GRU MODEL
+        # -------------------------
+        elif model_choice == "GRU":
+
+            sequences = bert_tokenizer.encode(
+                customer_remark,
+                truncation=True,
+                padding="max_length",
+                max_length=MAX_LEN
+            )
+
+            padded = [sequences]
+
+            prediction = gru_model.predict(padded)
+
+            csat_score = float(prediction[0][0])
+
+        # -------------------------
+        # BERT MODEL
+        # -------------------------
         else:
 
             inputs = bert_tokenizer(
@@ -157,23 +198,27 @@ if st.button("Predict CSAT Score"):
             )
 
             with torch.no_grad():
+
                 outputs = bert_model(**inputs)
 
             csat_score = outputs.logits.item()
 
-        # ------------------------------
-        # Display Prediction
-        # ------------------------------
+        # -----------------------------
+        # OUTPUT
+        # -----------------------------
 
         st.subheader("Predicted CSAT Score")
+
         st.success(round(csat_score, 2))
 
-        # Satisfaction Category
         if csat_score <= 2:
-            st.error("Customer is Dissatisfied")
+
+            st.error("Customer Dissatisfied")
 
         elif csat_score <= 3:
-            st.warning("Customer is Neutral")
+
+            st.warning("Customer Neutral")
 
         else:
-            st.success("Customer is Satisfied")
+
+            st.success("Customer Satisfied")
