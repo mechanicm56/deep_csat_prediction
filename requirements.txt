@@ -2,6 +2,7 @@ streamlit==1.32.0
 altair==4.2.2
 pandas
 numpy
+torch
 scikit-learn
 gdown
 keras==3.13.2
