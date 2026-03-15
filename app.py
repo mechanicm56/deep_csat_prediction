@@ -1,224 +1,220 @@
 import streamlit as st
-import tensorflow as tf
-import torch
-import gdown
-import os
-import zipfile
+import numpy as np
+import pandas as pd
+import pickle
 from pathlib import Path
-from transformers import BertTokenizer, BertForSequenceClassification
-from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# -----------------------------
-# CONFIGURATION
-# -----------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
 
-print("Base DIR", BASE_DIR)
-
-LSTM_MODEL_ID = "1PLBJYlIshDk1Br9vNptfXHJFPRNHDO8i"
-GRU_MODEL_ID = "1SndjABYlVadUQ7-9XKm4HR1Mf7Mbxir8"
-BERT_MODEL_ID = "1P5cm9nfEfoYD6dnb9V48dobtaQCORnq0"
-TOKENIZER_ID = "1SVVnDOA1ABGVFURVDR3RXq3GQQD4LJQ5"
-
-MAX_LEN = 100
-
 # Where to store downloaded files locally
 MODEL_DIR = Path(BASE_DIR / "models")
-MODEL_DIR.mkdir(exist_ok=True)
 
-# -----------------------------
-# DOWNLOAD FUNCTION
-# -----------------------------
-
-def download_file(file_id, output):
-
-    if not os.path.exists(output):
-
-        url = f"https://drive.google.com/uc?id={file_id}"
-
-        gdown.download(url, output, quiet=False)
-
-
-# -----------------------------
-# LOAD LSTM MODEL
-# -----------------------------
+# -------------------------------------
+# Load Model and Preprocessing
+# -------------------------------------
 
 @st.cache_resource
 def load_lstm():
-
-    download_file(LSTM_MODEL_ID, MODEL_DIR / "lstm_model.keras")
-
-    model = tf.keras.models.load_model(MODEL_DIR / "lstm_model.keras")
-
-    return model
-
-
-# -----------------------------
-# LOAD GRU MODEL
-# -----------------------------
-
-@st.cache_resource
-def load_gru():
-
-    download_file(GRU_MODEL_ID, MODEL_DIR / "gru_model.keras")
-
-    model = tf.keras.models.load_model(MODEL_DIR / "gru_model.keras")
-
-    return model
+    
+    model = load_model(MODEL_DIR / "lstm/lstm_model.keras")
+    
+    tokenizer = pickle.load(open(MODEL_DIR / "lstm/tokenizer.pkl","rb"))
+    
+    scaler = pickle.load(open(MODEL_DIR / "lstm/scaler.pkl","rb"))
+    
+    return model, tokenizer, scaler
 
 
-# -----------------------------
-# LOAD BERT MODEL
-# -----------------------------
+model, tokenizer, scaler = load_lstm()
 
-@st.cache_resource
-def load_bert():
+max_len = 100
 
-    download_file(BERT_MODEL_ID, MODEL_DIR / "distilbert_model.pth")
+# -------------------------
+# Page Config
+# -------------------------
 
-    model = BertForSequenceClassification.from_pretrained(
-        "distilbert-base-uncased",
-        num_labels=1
-    )
-
-    model.load_state_dict(
-        torch.load(MODEL_DIR / "distilbert_model.pth", map_location=torch.device("cpu"))
-    )
-
-    model.eval()
-
-    return model
-
-
-# -----------------------------
-# LOAD TOKENIZER
-# -----------------------------
-
-@st.cache_resource
-def load_tokenizer():
-
-    download_file(TOKENIZER_ID, MODEL_DIR / "bert_tokenizer.zip")
-
-    if not os.path.exists(MODEL_DIR / "bert_tokenizer"):
-
-        with zipfile.ZipFile("bert_tokenizer.zip", "r") as zip_ref:
-
-            zip_ref.extractall("bert_tokenizer")
-
-    tokenizer = BertTokenizer.from_pretrained("bert_tokenizer")
-
-    return tokenizer
-
-
-# -----------------------------
-# LOAD EVERYTHING
-# -----------------------------
-
-lstm_model = load_lstm()
-gru_model = load_gru()
-bert_model = load_bert()
-bert_tokenizer = load_tokenizer()
-
-# -----------------------------
-# STREAMLIT UI
-# -----------------------------
-
-st.title("Customer Satisfaction (CSAT) Prediction System")
-
-st.write("Predict customer satisfaction score from remarks using deep learning models.")
-
-model_choice = st.selectbox(
-    "Select Model",
-    ["LSTM", "GRU", "BERT"]
+st.set_page_config(
+    page_title="CSAT Prediction Dashboard",
+    layout="wide"
 )
 
-customer_remark = st.text_area("Enter Customer Remark")
+st.title("📊 Customer Satisfaction Prediction")
 
-# -----------------------------
-# PREDICTION
-# -----------------------------
+st.write("Predict CSAT score using LSTM Deep Learning Model")
 
-if st.button("Predict CSAT Score"):
 
-    if customer_remark.strip() == "":
+# -------------------------
+# GRID INPUT LAYOUT
+# -------------------------
 
-        st.warning("Please enter customer remark")
+col1, col2, col3 = st.columns(3)
+
+with col1:
+
+    channel = st.selectbox(
+        "Channel Name",
+        ["Chat","Email","Phone","Social Media"]
+    )
+
+    category = st.selectbox(
+        "Category",
+        ["Delivery","Payment","Return","Product Issue"]
+    )
+
+    # Category → Subcategory mapping
+    subcategory_options = {
+        "Delivery": ["Late Delivery"],
+        "Product Issue": ["Damaged Item"],
+        "Return": ["Wrong Item"],
+        "Payment": ["Refund Issue"]
+    }
+
+    # Dependent dropdown
+    sub_category = st.selectbox(
+        "Sub Category",
+        subcategory_options[category]
+    )
+
+with col2:
+
+    city = st.selectbox(
+        "Customer City",
+        ["Delhi","Mumbai","Bangalore","Chennai"]
+    )
+
+    product_category = st.selectbox(
+        "Product Category",
+        ["Electronics","Fashion","Home","Beauty"]
+    )
+
+    tenure = st.selectbox(
+        "Agent Tenure",
+        ["0-6 months","6-12 months","1-2 years"]
+    )
+
+with col3:
+
+    shift = st.selectbox(
+        "Agent Shift",
+        ["Morning","Evening","Night"]
+    )
+
+    item_price = st.number_input("Item Price", min_value=0.0)
+
+    handling_time = st.number_input("Handling Time", min_value=0.0)
+
+
+# Second row for numeric inputs
+
+col4, col5 = st.columns(2)
+
+with col4:
+
+    response_time = st.number_input("Response Time (seconds)", min_value=0.0)
+
+with col5:
+
+    remarks = st.text_area("Customer Remarks")
+
+
+# -------------------------
+# Encoding Maps
+# -------------------------
+
+channel_map = {"Chat":0,"Email":1,"Phone":2,"Social Media":3}
+
+category_map = {"Delivery":0,"Payment":1,"Return":2,"Product Issue":3}
+
+sub_map = {"Late Delivery":0,"Wrong Item":1,"Refund Issue":2,"Damaged Item":3}
+
+city_map = {"Delhi":0,"Mumbai":1,"Bangalore":2,"Chennai":3}
+
+product_map = {"Electronics":0,"Fashion":1,"Home":2,"Beauty":3}
+
+tenure_map = {"0-6 months":0,"6-12 months":1,"1-2 years":2}
+
+shift_map = {"Morning":0,"Evening":1,"Night":2}
+
+
+# -------------------------
+# Prediction Button
+# -------------------------
+
+st.divider()
+
+predict_button = st.button("🚀 Predict CSAT Score")
+
+
+# -------------------------
+# Prediction Logic
+# -------------------------
+
+if predict_button:
+
+    if remarks.strip() == "":
+        st.warning("Please enter customer remarks")
 
     else:
 
-        # -------------------------
-        # LSTM MODEL
-        # -------------------------
-        if model_choice == "LSTM":
+        seq = tokenizer.texts_to_sequences([remarks])
 
-            sequences = bert_tokenizer.encode(
-                customer_remark,
-                truncation=True,
-                padding="max_length",
-                max_length=MAX_LEN
+        padded = pad_sequences(seq, maxlen=max_len)
+
+
+        numeric_data = np.array([[item_price, handling_time, response_time]])
+
+        scaled_numeric = scaler.transform(numeric_data)
+
+
+        struct_data = np.array([[
+            channel_map[channel],
+            category_map[category],
+            sub_map[sub_category],
+            city_map[city],
+            product_map[product_category],
+            tenure_map[tenure],
+            shift_map[shift],
+            scaled_numeric[0][0],
+            scaled_numeric[0][1],
+            scaled_numeric[0][2]
+        ]])
+
+
+        prediction = model.predict([padded, struct_data])
+
+
+        predicted_class = np.argmax(prediction)
+
+        csat_score = predicted_class + 1
+
+        confidence = prediction[0][predicted_class] * 100
+
+
+        # -------------------------
+        # Result Layout
+        # -------------------------
+
+        res1, res2 = st.columns(2)
+
+        with res1:
+
+            st.success(f"⭐ Predicted CSAT Score: {csat_score}")
+
+            st.metric(
+                label="Confidence Score",
+                value=f"{confidence:.2f}%"
             )
 
-            padded = [sequences]
+        with res2:
 
-            prediction = lstm_model.predict(padded)
+            st.subheader("Prediction Probability Distribution")
 
-            csat_score = float(prediction[0][0])
+            prob_df = pd.DataFrame({
+                "CSAT":[1,2,3,4,5],
+                "Probability":prediction[0]
+            })
 
-        # -------------------------
-        # GRU MODEL
-        # -------------------------
-        elif model_choice == "GRU":
-
-            sequences = bert_tokenizer.encode(
-                customer_remark,
-                truncation=True,
-                padding="max_length",
-                max_length=MAX_LEN
-            )
-
-            padded = [sequences]
-
-            prediction = gru_model.predict(padded)
-
-            csat_score = float(prediction[0][0])
-
-        # -------------------------
-        # BERT MODEL
-        # -------------------------
-        else:
-
-            inputs = bert_tokenizer(
-                customer_remark,
-                return_tensors="pt",
-                truncation=True,
-                padding=True,
-                max_length=128
-            )
-
-            with torch.no_grad():
-
-                outputs = bert_model(**inputs)
-
-            csat_score = outputs.logits.item()
-
-        # -----------------------------
-        # OUTPUT
-        # -----------------------------
-
-        st.subheader("Predicted CSAT Score")
-
-        st.success(round(csat_score, 2))
-
-        if csat_score <= 2:
-
-            st.error("Customer Dissatisfied")
-
-        elif csat_score <= 3:
-
-            st.warning("Customer Neutral")
-
-        else:
-
-            st.success("Customer Satisfied")
+            st.bar_chart(prob_df.set_index("CSAT"))
