@@ -3,9 +3,6 @@ altair==4.2.2
 pandas
 numpy
 scikit-learn
-xgboost==2.0.3
-lightgbm==4.3.0
-joblib
 gdown
 keras==3.13.2
 tensorflow==2.21.0
