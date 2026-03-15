@@ -11,7 +11,7 @@ A **Streamlit dashboard** allows users to input interaction details and receive 
 ## 🚀 Live Demo (Streamlit App)
 
 🔗 **Streamlit Demo:**
-👉 https://deep-csat-predict.streamlit.app/
+👉 https://deep-csat-prediction.streamlit.app/
 
 # 🚀 Project Overview
 
@@ -124,7 +124,7 @@ Dashboard features:
 # 📂 Project Structure
 
 ```
-csat_prediction_project/
+deep_csat_prediction/
 
 │
 ├── app.py
