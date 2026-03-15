@@ -5,6 +5,6 @@ numpy
 scikit-learn
 gdown
 keras==3.13.2
-tensorflow==2.21.0
-transformers==5.3.0
+tensorflow
+transformers
 plotly
