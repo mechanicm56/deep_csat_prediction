@@ -41,7 +41,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Customer Satisfaction Prediction")
+st.title("Customer Satisfaction Prediction")
 
 st.write("Predict CSAT score using LSTM Deep Learning Model")
 
@@ -145,7 +145,7 @@ shift_map = {"Morning":0,"Evening":1,"Night":2}
 
 st.divider()
 
-predict_button = st.button("🚀 Predict CSAT Score")
+predict_button = st.button("Predict CSAT Score")
 
 
 # -------------------------
@@ -201,7 +201,7 @@ if predict_button:
 
         with res1:
 
-            st.success(f"⭐ Predicted CSAT Score: {csat_score}")
+            st.success(f"Predicted CSAT Score: {csat_score}")
 
             st.metric(
                 label="Confidence Score",
