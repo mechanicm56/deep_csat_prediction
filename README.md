@@ -1,4 +1,4 @@
-# 📊 Customer Satisfaction (CSAT) Prediction Dashboard
+# Customer Satisfaction (CSAT) Prediction Dashboard
 
 This project builds a **Deep Learning–based Customer Satisfaction Prediction System** that predicts the **CSAT Score (1–5)** using customer service interaction data.
 
@@ -8,12 +8,12 @@ A **Streamlit dashboard** allows users to input interaction details and receive 
 
 ---
 
-## 🚀 Live Demo (Streamlit App)
+## Live Demo (Streamlit App)
 
-🔗 **Streamlit Demo:**
-👉 https://deep-csat-prediction.streamlit.app/
+**Streamlit Demo:**
+https://deep-csat-prediction.streamlit.app/
 
-# 🚀 Project Overview
+# Project Overview
 
 Customer Satisfaction (CSAT) is a key metric used by organizations to measure **customer experience and service quality**.
 
@@ -27,11 +27,11 @@ This project aims to:
 
 ---
 
-# 🧠 Machine Learning Approach
+# Machine Learning Approach
 
 The system combines two types of data:
 
-### 1️⃣ Text Data
+### Text Data
 
 Customer remarks are processed using:
 
@@ -40,7 +40,7 @@ Customer remarks are processed using:
 * Word embeddings
 * LSTM / BiLSTM networks
 
-### 2️⃣ Structured Data
+### Structured Data
 
 Additional interaction features are used such as:
 
@@ -59,7 +59,7 @@ These features are **scaled using StandardScaler** before training.
 
 ---
 
-# 🏗️ Model Architecture
+# Model Architecture
 
 ## LSTM Model
 
@@ -87,7 +87,7 @@ Structured features are merged with text embeddings to generate the final predic
 
 ---
 
-# 📊 Model Output
+# Model Output
 
 The model predicts:
 
@@ -102,7 +102,7 @@ Confidence Score: 82.45%
 
 ---
 
-# 🖥️ Streamlit Dashboard
+# Streamlit Dashboard
 
 The project includes a **Streamlit dashboard** that allows users to:
 
@@ -121,7 +121,7 @@ Dashboard features:
 
 ---
 
-# 📂 Project Structure
+# Project Structure
 
 ```
 deep_csat_prediction/
@@ -141,7 +141,7 @@ deep_csat_prediction/
 
 # ⚙️ Installation
 
-### 1️⃣ Clone Repository
+### Clone Repository
 
 ```
 git clone https://github.com/yourusername/csat-prediction-dashboard.git
@@ -153,7 +153,7 @@ cd csat-prediction-dashboard
 
 ---
 
-### 2️⃣ Install Dependencies
+### Install Dependencies
 
 ```
 pip install -r requirements.txt
@@ -169,7 +169,7 @@ Required libraries:
 
 ---
 
-### 3️⃣ Run Streamlit App
+### Run Streamlit App
 
 ```
 streamlit run app.py
@@ -179,7 +179,7 @@ The dashboard will open in your browser.
 
 ---
 
-# 📈 Example Prediction Workflow
+# Example Prediction Workflow
 
 1. User enters interaction details
 2. Customer remarks are tokenized
@@ -190,7 +190,7 @@ The dashboard will open in your browser.
 
 ---
 
-# 🔍 Features Implemented
+# Features Implemented
 
 ✔ LSTM Deep Learning model
 ✔ BiLSTM model for improved text understanding
@@ -204,7 +204,7 @@ The dashboard will open in your browser.
 
 ---
 
-# 📊 Future Improvements
+# Future Improvements
 
 Potential improvements include:
 
@@ -217,7 +217,7 @@ Potential improvements include:
 
 ---
 
-# 👨‍💻 Author
+# Author
 
 Developed as a **Machine Learning / NLP project** for customer experience analytics.
 
