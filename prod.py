@@ -21,7 +21,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Customer Satisfaction Prediction Dashboard")
+st.title("Customer Satisfaction Prediction Dashboard")
 
 
 # -----------------------------
@@ -146,7 +146,7 @@ with btn_col1:
 
 with btn_col2:
 
-    predict_button = st.button("🚀 Predict CSAT Score")
+    predict_button = st.button("Predict CSAT Score")
 
 
 model = load_model_selected(model_option)
@@ -249,7 +249,7 @@ if predict_button:
 
         with res1:
 
-            st.success(f"⭐ Predicted CSAT Score: {csat_score}")
+            st.success(f"Predicted CSAT Score: {csat_score}")
 
             st.metric(
                 "Confidence Score",
